@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     groq_api_key: str = ""
     database_url: str = "sqlite:///./llm_automation.db"
     log_level: str = "INFO"
+    huggingface_model: str = "google/gemma-2-2b-it"
+    huggingface_base_url: str = "https://router.huggingface.co/hf-inference/models"
 
     model_config = SettingsConfigDict(
         env_file=".env",
