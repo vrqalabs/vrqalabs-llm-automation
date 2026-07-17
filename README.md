@@ -81,21 +81,16 @@ OPENROUTER_MODEL=openai/gpt-4o-mini
 .
 ├── app/
 │   ├── api/               # FastAPI routes
-│   ├── core/              # configuration and logging
-│   ├── database/          # SQLAlchemy models and sessions
-│   ├── evaluators/        # benchmarking and evaluation logic
-│   ├── prompts/           # reusable prompt templates
-│   ├── services/          # LLM provider integrations
+│   ├── core/              # configuration and settings
+│   ├── schemas/           # request/response pydantic schemas
+│   ├── services/          # LLM provider integrations and adapters
 │   ├── utils/             # shared helper functions
 │   └── main.py            # application entry point
-├── dashboard/             # Streamlit dashboard
-├── tests/
-│   ├── unit/              # unit tests
-│   ├── integration/       # API and provider tests
-│   └── load/              # performance testing
+├── dashboard/             # optional Streamlit dashboard
 ├── docs/                  # project documentation
-├── Dockerfile
-├── docker-compose.yml
+├── notebooks/             # exploratory notebooks
+├── scripts/               # helper scripts (run/stop server)
+├── tests/                 # unit and integration tests
 ├── requirements.txt
 └── README.md
 ```
