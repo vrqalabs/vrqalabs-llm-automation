@@ -73,6 +73,10 @@ OPENROUTER_MODEL=openai/gpt-4o-mini
 
 3. Restart the app so the new settings are loaded.
 
+Note: Never commit your local `.env` file to version control — it may contain
+secrets. The repository includes `.env` in `.gitignore` and provides
+`.env.example` as a safe template instead.
+
 > If the key is missing, the app will return a clear error instead of sending an invalid request.
 
 ## 3. Project structure
