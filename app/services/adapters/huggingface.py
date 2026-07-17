@@ -1,46 +1,246 @@
+import time
+import json
+
 import httpx
 
 from app.core.config import get_settings
 from app.services.adapters.base import LLMAdapter
+from app.utils.logging import get_logger
+
+
+logger = get_logger(__name__)
 
 
 class HuggingFaceAdapter(LLMAdapter):
-    async def generate(self, prompt: str):
-        settings = get_settings()
-        api_key = settings.hf_api_key.strip()
+    """
+    Hugging Face Inference API Adapter.
+
+    Supports Hugging Face hosted models.
+    """
+
+    def __init__(self):
+
+        self.settings = get_settings()
+
+        self.base_url = (
+            self.settings.huggingface_base_url
+        )
+
+        logger.info(
+            "HuggingFace adapter initialized"
+        )
+
+
+    async def generate(self, prompt: str) -> str:
+
+        start_time = time.time()
+
+
+        api_key = (
+            self.settings.hf_api_key
+            or ""
+        ).strip()
+
+
         if not api_key:
-            return f"Mock response for prompt: {prompt}"
 
-        url = f"{settings.huggingface_base_url}/{settings.huggingface_model}"
+            logger.error(
+                "HuggingFace API key missing"
+            )
+
+            raise RuntimeError(
+                "HuggingFace API key is not configured"
+            )
+
+
+        model = (
+            self.settings.hf_model
+            or self.settings.huggingface_model
+        )
+
+
+        if not model:
+
+            logger.error(
+                "HuggingFace model missing"
+            )
+
+            raise RuntimeError(
+                "HuggingFace model is not configured"
+            )
+
+
+        url = (
+            f"{self.base_url}/{model}"
+        )
+
+
+        logger.info(
+            "========== HUGGINGFACE REQUEST START =========="
+        )
+
+
+        logger.info(
+            f"Provider: HuggingFace"
+        )
+
+
+        logger.info(
+            f"Model: {model}"
+        )
+
+
+        logger.info(
+            f"Prompt: {prompt}"
+        )
+
+
         headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
+
+            "Authorization":
+                f"Bearer {api_key}",
+
+            "Content-Type":
+                "application/json"
+
         }
-        payload = {"inputs": prompt}
 
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.post(url, headers=headers, json=payload)
 
-        if response.status_code == 401:
-            raise RuntimeError("Unauthorized Hugging Face request")
-        if response.status_code == 429:
-            raise RuntimeError("Hugging Face rate limit exceeded")
-        if response.status_code >= 400:
-            raise RuntimeError(f"Hugging Face request failed: {response.text}")
+        payload = {
+
+            "inputs": prompt,
+
+            "parameters": {
+
+                "temperature": 0.2,
+
+                "max_new_tokens": 256
+
+            }
+
+        }
+
+
+        logger.info(
+            "Request Payload:"
+        )
+
+
+        logger.info(
+            json.dumps(
+                payload,
+                indent=2
+            )
+        )
+
+
+        async with httpx.AsyncClient(
+            timeout=60
+        ) as client:
+
+
+            response = await client.post(
+
+                url,
+
+                headers=headers,
+
+                json=payload
+
+            )
+
+
+        latency = (
+            time.time()
+            -
+            start_time
+        )
+
+
+        logger.info(
+            "HuggingFace Response Received"
+        )
+
+
+        logger.info(
+            f"HTTP Status: {response.status_code}"
+        )
+
+
+        logger.info(
+            f"Latency: {latency:.2f} seconds"
+        )
+
+
+        logger.info(
+            "Response JSON:"
+        )
+
+
+        logger.info(
+            response.text
+        )
+
+
+        if response.status_code != 200:
+
+            logger.error(
+                response.text
+            )
+
+            raise RuntimeError(
+                f"HuggingFace API error "
+                f"{response.status_code}: "
+                f"{response.text}"
+            )
+
+
+        data = response.json()
+
 
         try:
-            data = response.json()
-        except ValueError as exc:
-            raise RuntimeError("Unexpected Hugging Face response format") from exc
 
-        if isinstance(data, list) and data:
-            item = data[0]
-            if isinstance(item, dict):
-                generated = item.get("generated_text") or item.get("text") or ""
-                return str(generated).strip()
+            if isinstance(data, list):
 
-        if isinstance(data, dict):
-            generated = data.get("generated_text") or data.get("text") or ""
-            return str(generated).strip()
+                generated_text = (
+                    data[0]
+                    .get("generated_text", "")
+                )
 
-        raise RuntimeError("Unexpected Hugging Face API response")
+            else:
+
+                generated_text = (
+                    data.get(
+                        "generated_text",
+                        ""
+                    )
+                )
+
+
+        except Exception:
+
+            logger.exception(
+                "Unable to parse HuggingFace response"
+            )
+
+            raise RuntimeError(
+                "Invalid HuggingFace response format"
+            )
+
+
+        logger.info(
+            "Generated Answer:"
+        )
+
+
+        logger.info(
+            generated_text
+        )
+
+
+        logger.info(
+            "========== HUGGINGFACE REQUEST END =========="
+        )
+
+
+        return generated_text

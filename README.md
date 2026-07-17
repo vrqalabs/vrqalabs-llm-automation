@@ -56,6 +56,25 @@ http://localhost:8000/docs
 Environment variables are used to configure API keys, database connections, and
 supported LLM providers.
 
+### OpenRouter configuration
+
+1. Copy the example environment file:
+
+```bash
+copy .env.example .env
+```
+
+2. Open [.env](.env) and set your real OpenRouter key:
+
+```env
+OPENROUTER_API_KEY=your_openrouter_key_here
+OPENROUTER_MODEL=openai/gpt-4o-mini
+```
+
+3. Restart the app so the new settings are loaded.
+
+> If the key is missing, the app will return a clear error instead of sending an invalid request.
+
 ## 3. Project structure
 
 ```text

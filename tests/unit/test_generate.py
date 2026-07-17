@@ -3,9 +3,10 @@ from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, patch
 
 from app.main import app
+from app.schemas.generate_response import GenerateResponse
+from app.services.exceptions import ProviderNotFoundError
 from app.services.factory import LLMFactory
 from app.services.llm_service import LLMService
-from app.services.exceptions import ProviderNotFoundError
 
 
 client = TestClient(app)
@@ -73,6 +74,59 @@ async def test_mock_huggingface_response():
 
 
 @pytest.mark.asyncio
+async def test_mock_openrouter_response():
+    with patch("app.services.adapters.openrouter.httpx.AsyncClient") as mock_client, patch("app.services.adapters.openrouter.get_settings") as mock_settings:
+        class MockResponse:
+            status_code = 200
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {
+                    "choices": [
+                        {"message": {"content": "Mocked OpenRouter response"}}
+                    ]
+                }
+
+        mock_response = MockResponse()
+        mock_client.return_value.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
+        mock_settings.return_value = type(
+            "Settings",
+            (),
+            {
+                "openrouter_api_key": "dummy-key",
+                "openrouter_base_url": "https://example.test",
+                "openrouter_model": "mistral/7b",
+            },
+        )()
+
+        from app.services.adapters.openrouter import OpenRouterAdapter
+
+        adapter = OpenRouterAdapter()
+        result = await adapter.generate("Hello")
+
+    assert result == "Mocked OpenRouter response"
+
+
+@pytest.mark.asyncio
+async def test_openrouter_missing_api_key_raises_runtime_error():
+    with patch("app.services.adapters.openrouter.get_settings") as mock_settings:
+        mock_settings.return_value = type(
+            "Settings",
+            (),
+            {"openrouter_api_key": "", "openrouter_model": "mistral/7b"},
+        )()
+
+        from app.services.adapters.openrouter import OpenRouterAdapter
+
+        adapter = OpenRouterAdapter()
+
+        with pytest.raises(RuntimeError, match="OpenRouter API key is not configured"):
+            await adapter.generate("Hello")
+
+
+@pytest.mark.asyncio
 async def test_service_behavior_uses_adapter_result():
     service = LLMService()
 
@@ -83,7 +137,9 @@ async def test_service_behavior_uses_adapter_result():
 
         result = await service.generate("huggingface", "Hello")
 
-    assert result == "service response"
+    assert isinstance(result, GenerateResponse)
+    assert result.provider == "huggingface"
+    assert result.response == "service response"
 
 
 def test_factory_behavior_returns_expected_adapter():

@@ -1,26 +1,35 @@
-from app.services.factory import LLMFactory
+from app.schemas.generate_response import GenerateResponse
 from app.services.exceptions import ProviderNotFoundError
+from app.services.factory import LLMFactory
+from app.utils.logging import get_logger
 
+logger = get_logger(__name__)
 
 class LLMService:
-    async def generate(self, provider: str, prompt: str) -> str:
-        if not provider or not prompt:
-            raise ValueError("Provider and prompt are required")
 
-        try:
-            adapter = LLMFactory.create(provider)
-        except ProviderNotFoundError as exc:
-            raise ValueError(f"Unsupported provider: {provider}") from exc
+    async def generate(
+        self,
+        provider: str,
+        prompt: str
+    ):
 
-        try:
-            result = await adapter.generate(prompt)
-        except NotImplementedError as exc:
-            raise RuntimeError(str(exc)) from exc
+        logger.info(
+            f"Selecting provider | {provider}"
+        )
 
-        if isinstance(result, str):
-            return result
+        adapter = LLMFactory.create(provider)
 
-        if isinstance(result, dict) and "generated_text" in result:
-            return str(result["generated_text"])
+        logger.info(
+            f"Calling adapter | {provider}"
+        )
 
-        return str(result)
+        result = await adapter.generate(prompt)
+
+        logger.info(
+            "Adapter response received"
+        )
+
+        return GenerateResponse(
+            provider=provider,
+            response=result,
+        )

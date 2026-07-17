@@ -4,27 +4,75 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables."""
 
-    app_name: str = "VRQALabs LLM Automation"
-    app_version: str = "0.1.0"
-    app_env: str = "development"
-    debug: bool = True
-    openrouter_api_key: str = ""
-    hf_api_key: str = ""
-    groq_api_key: str = ""
-    database_url: str = "sqlite:///./llm_automation.db"
-    log_level: str = "INFO"
-    huggingface_model: str = "google/gemma-2-2b-it"
-    huggingface_base_url: str = "https://router.huggingface.co/hf-inference/models"
+    # ==========================
+    # Application
+    # ==========================
+
+    app_name: str
+
+    app_version: str
+
+    app_env: str
+
+    debug: bool
+
+
+    # ==========================
+    # OpenRouter
+    # ==========================
+
+    openrouter_api_key: str
+
+    openrouter_model: str
+
+    openrouter_base_url: str
+
+
+    # ==========================
+    # HuggingFace
+    # ==========================
+
+    hf_api_key: str | None = None
+
+    hf_model: str | None = None
+
+    huggingface_base_url: str | None = None
+
+
+    # ==========================
+    # Groq
+    # ==========================
+
+    groq_api_key: str | None = None
+
+
+    # ==========================
+    # Database
+    # ==========================
+
+    database_url: str
+
+
+    # ==========================
+    # Logging
+    # ==========================
+
+    log_level: str
+
 
     model_config = SettingsConfigDict(
+
         env_file=".env",
+
         case_sensitive=False,
+
+        extra="ignore"
+
     )
 
 
 @lru_cache
 def get_settings() -> Settings:
-    """Return a cached settings instance."""
+
     return Settings()
