@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
+from app.schemas.llm_response import LLMResponse
 
 
 class GenerateResponse(BaseModel):
-    provider: str = Field(..., description="Provider used for generation")
-    response: str = Field(..., description="Generated text returned by the provider")
+    result: LLMResponse
+

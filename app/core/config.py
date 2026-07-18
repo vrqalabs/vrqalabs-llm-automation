@@ -46,6 +46,19 @@ class Settings(BaseSettings):
 
     groq_api_key: str | None = None
 
+    groq_model: str | None = None
+
+    groq_base_url: str | None = None
+
+
+    # ==========================
+    # Ollama
+    # ==========================
+
+    ollama_base_url: str | None = None
+
+    ollama_model: str | None = None
+
 
     # ==========================
     # Database
